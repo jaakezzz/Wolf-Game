@@ -3895,6 +3895,7 @@ GameObject:
   - component: {fileID: 2586105489210793294}
   - component: {fileID: -4533212694392639083}
   - component: {fileID: 7289490758992011312}
+  - component: {fileID: 9101883288738973668}
   m_Layer: 0
   m_Name: minotaur1
   m_TagString: Untagged
@@ -3933,7 +3934,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 1ec31ee6b4e699b4c919f9ddd24f6f73, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -3951,7 +3952,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 4414871117303439921}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
+  m_Radius: 1
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
@@ -3977,21 +3978,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 0}
-  animator: {fileID: 0}
+  animator: {fileID: 4414871117303439920}
   attackPoint: {fileID: 0}
-  interestRadius: 25
-  sightRadius: 15
-  sightFOV: 120
-  losBlockers:
+  speedParam: speed
+  attackTrigger: attack1
+  dieTrigger: die
+  interestRadius: 35
+  sightRadius: 25
+  sightFOV: 180
+  visionBlockers:
     serializedVersion: 2
     m_Bits: 4294967295
   requireLineOfSight: 1
+  eyeHeight: 1.6
+  targetHeight: 1
+  memoryTime: 1
+  debugVision: 0
   attackRange: 2.2
   attackCooldown: 1.2
   attackWindup: 0.25
   damage: 20
   faceSpeed: 540
-  patrolPoints: []
+  patrolPoints:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   loopPatrol: 1
   waypointTolerance: 0.6
   idlePauseAtWaypoint: 0.5
@@ -4009,7 +4020,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5ad64833b30a994b9f13cc78f1b37c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  anim: {fileID: 0}
+  anim: {fileID: 4414871117303439920}
+--- !u!114 &9101883288738973668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4414871117303439921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 445b5bcbd2def6349b282811d974cbaf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pointCount: 3
+  minSeparation: 10
+  edgeBias: 0.75
+  maxAttemptsPerPoint: 120
+  snapToNavMesh: 1
+  navMeshSampleRange: 4
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  autoGenerateAtRuntime: 0
 --- !u!1 &4414871117353324497
 GameObject:
   m_ObjectHideFlags: 0
