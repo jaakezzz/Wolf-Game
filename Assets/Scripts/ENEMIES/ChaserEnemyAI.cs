@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(Health))]
 public class ChaserEnemyAI : MonoBehaviour
 {
     public enum State { Patrol, Chase, Attack, Return }
@@ -21,19 +22,19 @@ public class ChaserEnemyAI : MonoBehaviour
 
     #region AoI / Vision
     [Header("Area of Interest")]
-    public float interestRadius = 25f;       // chase only inside this bubble
+    public float interestRadius = 25f;
     Vector3 homePos;
 
     [Header("Vision")]
-    public float sightRadius = 15f;          // how far eyes can reach
-    [Range(0, 360)] public float sightFOV = 120f; // horizontal FOV (deg)
-    public LayerMask visionBlockers = ~0;    // terrain/default/etc. (NOT the enemy's own layer)
+    public float sightRadius = 15f;
+    [Range(0, 360)] public float sightFOV = 120f;
+    public LayerMask visionBlockers = ~0;
     public bool requireLineOfSight = true;
 
     [Header("Vision – tuning")]
-    public float eyeHeight = 1.6f;           // ray origin above enemy root
-    public float targetHeight = 1.0f;        // ray aim above player root
-    public float memoryTime = 1.0f;          // keep chasing this long after LoS drops
+    public float eyeHeight = 1.6f;
+    public float targetHeight = 1.0f;
+    public float memoryTime = 1.0f;
     public bool debugVision = false;
 
     float lastSeenTime = -999f;
@@ -60,6 +61,7 @@ public class ChaserEnemyAI : MonoBehaviour
     public float patrolSpeed = 2.25f;
 
     NavMeshAgent agent;
+    Health health;
     State state = State.Patrol;
 
     // patrol bookkeeping
@@ -70,11 +72,17 @@ public class ChaserEnemyAI : MonoBehaviour
 
     float lastAttackTime = -999f;
     float retargetTimer;                      // reduce SetDestination spam
+
+    // death gate
+    bool isDead;
     #endregion
 
     void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
+        health = GetComponent<Health>();
+        health.onDeath.AddListener(OnDied);
+
         homePos = transform.position;
 
         if (!player)
@@ -85,21 +93,56 @@ public class ChaserEnemyAI : MonoBehaviour
         if (!animator) animator = GetComponentInChildren<Animator>();
     }
 
+    void OnDestroy()
+    {
+        if (health) health.onDeath.RemoveListener(OnDied);
+    }
+
     void OnEnable()
     {
+        if (isDead) return; // if re-enabled after death, do nothing
         state = State.Patrol;
-        agent.isStopped = false;
-        agent.speed = patrolSpeed;
+        if (agent) { agent.isStopped = false; agent.speed = patrolSpeed; }
         waitingAtWaypoint = false;
         patrolIndex = 0;
         patrolDir = 1;
         GoToCurrentPatrolPointOrHome();
     }
 
+    void OnDied()
+    {
+        isDead = true;
+
+        StopAllCoroutines();
+        state = State.Return;
+
+        if (agent)
+        {
+            agent.ResetPath();
+            agent.isStopped = true;
+        }
+
+        // Zero out animator speed so it doesn't try to blend into locomotion
+        if (animator && !string.IsNullOrEmpty(speedParam))
+            animator.SetFloat(speedParam, 0f);
+
+        // You can also disable this component here if you prefer:
+        // enabled = false;
+    }
+
     void Update()
     {
+        if (isDead)
+        {
+            // Keep animator speed at 0
+            if (animator && !string.IsNullOrEmpty(speedParam))
+                animator.SetFloat(speedParam, 0f);
+            return;
+        }
+
         // Feed animator speed (safe if animator is null)
-        if (animator) animator.SetFloat(speedParam, agent.velocity.magnitude);
+        if (animator && agent)
+            animator.SetFloat(speedParam, agent.velocity.magnitude);
 
         if (!player) { PatrolUpdate(); return; }
 
@@ -160,11 +203,9 @@ public class ChaserEnemyAI : MonoBehaviour
         Vector3 eye = transform.position + Vector3.up * eyeHeight;
         Vector3 target = player.position + Vector3.up * targetHeight;
 
-        // Distance gate
         float dist = (target - eye).magnitude;
         if (dist > sightRadius) return false;
 
-        // Horizontal FOV only (ignore steep slopes)
         Vector3 fwd = transform.forward; fwd.y = 0f; fwd.Normalize();
         Vector3 toHoriz = (target - eye); toHoriz.y = 0f; toHoriz.Normalize();
         if (fwd.sqrMagnitude > 1e-6f)
@@ -175,7 +216,6 @@ public class ChaserEnemyAI : MonoBehaviour
 
         if (!requireLineOfSight) return true;
 
-        // Ignore self layer so we don’t hit our own colliders
         int selfMask = 1 << gameObject.layer;
         int blockers = visionBlockers & ~selfMask;
 
@@ -187,12 +227,14 @@ public class ChaserEnemyAI : MonoBehaviour
         }
 
         if (debugVision) Debug.DrawLine(eye, target, Color.green, 0.05f);
-        return true; // nothing in between
+        return true;
     }
 
     // ----------------- Attack -----------------
     IEnumerator AttackRoutine()
     {
+        if (isDead) { state = State.Patrol; yield break; }
+
         if (Time.time < lastAttackTime + attackCooldown)
         {
             state = State.Chase;
@@ -200,7 +242,7 @@ public class ChaserEnemyAI : MonoBehaviour
         }
 
         lastAttackTime = Time.time;
-        agent.isStopped = true;
+        if (agent) agent.isStopped = true;
 
         if (animator && !string.IsNullOrEmpty(attackTrigger))
             animator.SetTrigger(attackTrigger);
@@ -208,14 +250,22 @@ public class ChaserEnemyAI : MonoBehaviour
         float t = 0f;
         while (t < attackWindup)
         {
+            if (isDead) { yield break; }            // <- death gate
             t += Time.deltaTime;
 
             bool inAoI = (player.position - homePos).sqrMagnitude <= interestRadius * interestRadius;
-            if (!inAoI || !IsPlayerVisible()) { agent.isStopped = false; state = State.Chase; yield break; }
+            if (!inAoI || !IsPlayerVisible())
+            {
+                if (agent) agent.isStopped = false;
+                state = State.Chase;
+                yield break;
+            }
 
             FaceTowards(player.position);
             yield return null;
         }
+
+        if (isDead) yield break;                     // <- death gate
 
         // Damage if still in range and visible
         if (Vector3.Distance(transform.position, player.position) <= attackRange && IsPlayerVisible())
@@ -237,7 +287,7 @@ public class ChaserEnemyAI : MonoBehaviour
 
         yield return new WaitForSeconds(0.05f);
 
-        agent.isStopped = false;
+        if (agent) agent.isStopped = false;
         state = IsPlayerVisible() ? State.Chase : State.Patrol;
         if (state == State.Patrol) { agent.speed = patrolSpeed; GoToNearestPatrolOrHome(); }
     }
@@ -329,6 +379,7 @@ public class ChaserEnemyAI : MonoBehaviour
 
     void SetDestination(Vector3 pos, float speed)
     {
+        if (!agent) return;
         agent.speed = speed;
         agent.isStopped = false;
         agent.SetDestination(pos);
@@ -350,7 +401,6 @@ public class ChaserEnemyAI : MonoBehaviour
         Gizmos.color = new Color(0.2f, 1f, 0.2f, 0.2f);
         Gizmos.DrawWireSphere(transform.position, sightRadius);
 
-        // FOV wedge (approx.)
         Gizmos.color = new Color(1f, 0.8f, 0.1f, 0.25f);
         Vector3 eye = transform.position + Vector3.up * eyeHeight;
         Vector3 fwd = transform.forward; fwd.y = 0f; fwd.Normalize();
@@ -359,7 +409,6 @@ public class ChaserEnemyAI : MonoBehaviour
         Gizmos.DrawLine(eye, eye + (L * fwd) * sightRadius);
         Gizmos.DrawLine(eye, eye + (R * fwd) * sightRadius);
 
-        // Attack probe
         Gizmos.color = Color.red;
         Vector3 p = attackPoint ? attackPoint.position : (transform.position + transform.forward * (attackRange * 0.7f));
         Gizmos.DrawWireSphere(p, 0.25f);

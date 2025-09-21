@@ -44,11 +44,13 @@ public class PlayerMotor : MonoBehaviour
     float coyoteTimer;
     float bufferTimer;
     int ignoreGroundedFrames;          // prevents slope from canceling jump
+    PlayerMelee melee;   // cache reference
 
     void Awake()
     {
         cc = GetComponent<CharacterController>();
         if (!animator) animator = GetComponentInChildren<Animator>();
+        melee = GetComponent<PlayerMelee>();   // find the PlayerMelee script
     }
 
     void Update()
@@ -128,9 +130,19 @@ public class PlayerMotor : MonoBehaviour
         if (animator && !string.IsNullOrEmpty(triggerName))
             animator.SetTrigger(triggerName);
 
+        // Hook into melee
+        if (melee)
+        {
+            if (triggerName == attack1Trigger)
+                melee.TriggerAttack1();
+            else if (triggerName == attack2Trigger)
+                melee.TriggerAttack2();
+        }
+
         if (lockMoveDuringAttack && lockTime > 0f)
             StartCoroutine(AttackLock(lockTime));
     }
+
 
     IEnumerator AttackLock(float t)
     {
