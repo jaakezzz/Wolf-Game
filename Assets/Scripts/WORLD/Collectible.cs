@@ -32,6 +32,9 @@ public class Collectible : MonoBehaviour
     public float pauseDelay = 0.75f;           // realtime seconds before pausing
     public bool pauseOnUnlock = true;          // toggle if you want this behavior
 
+    // --- runtime refs ---
+    PauseMenu pauseMenu;                        // found at runtime; works from prefab
+
     void Awake()
     {
         if (sfx)
@@ -40,6 +43,9 @@ public class Collectible : MonoBehaviour
             sfx.spatialBlend = 1f; // 3D
             sfx.volume = sfxVolume;
         }
+
+        // Find even if disabled in hierarchy
+        if (!pauseMenu) pauseMenu = FindObjectOfType<PauseMenu>(true);
     }
 
     void OnTriggerEnter(Collider other)
@@ -62,33 +68,69 @@ public class Collectible : MonoBehaviour
                 if (motor) motor.UnlockRun();
                 clipToPlay = speedClip;
 
-                if (pauseOnUnlock && GameManager.I != null)
-                    GameManager.I.ShowSpeedUnlockPopup(pauseDelay);
+                // Use PauseMenu directly (no GameManager indirection)
+                if (pauseOnUnlock && pauseMenu && pauseMenu.unlockedSpeedCanvas)
+                    StartDetachedPauseRoutine(pauseMenu, pauseMenu.unlockedSpeedCanvas, pauseMenu.pauseMenu, pauseDelay);
                 break;
 
             case CollectibleType.Points:
-                GameManager.I.AddScore(points);
+                if (GameManager.I) GameManager.I.AddScore(points);
                 clipToPlay = pointsClip;
                 break;
 
             case CollectibleType.Win:
-                GameManager.I.OnWin();
+                if (GameManager.I) GameManager.I.OnWin();
                 clipToPlay = winClip;
                 break;
         }
 
-        // FX (tinted instance)
+        // Spawn FX and tint that INSTANCE only
         if (pickupFX)
         {
             var fx = Instantiate(pickupFX, transform.position, Quaternion.identity);
-            if (tintFXByType) TintFX(fx, GetTypeColor(type));
+            if (tintFXByType)
+                TintFX(fx, GetTypeColor(type));
         }
 
-        // SFX that survives after destroy
+        // Play sound that survives after this object is destroyed
         PlayDetached(clipToPlay, transform.position, sfx, sfxVolume);
 
+        // Remove the pickup immediately; pause routine runs on a tiny helper object
         Destroy(gameObject);
     }
+
+    // ---- Helper: run pause/show panel even after this pickup is destroyed ----
+    void StartDetachedPauseRoutine(PauseMenu pm, GameObject customPanel, GameObject defaultPausePanel, float delay)
+    {
+        var runnerGO = new GameObject("UnlockPauseRunner");
+        var runner = runnerGO.AddComponent<CoroutineRunner>();
+        runner.StartCoroutine(PauseAndShow(pm, customPanel, defaultPausePanel, delay));
+        // cleanup a bit later
+        Destroy(runnerGO, delay + 5f);
+    }
+
+    static System.Collections.IEnumerator PauseAndShow(PauseMenu pm, GameObject customPanel, GameObject defaultPausePanel, float delay)
+    {
+        // Use realtime so it ignores Time.timeScale changes
+        float t = 0f;
+        while (t < delay)
+        {
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        // Pause the game
+        pm.SetPaused(true);
+
+        // Hide normal pause menu panel (so only the unlock panel shows)
+        if (defaultPausePanel) defaultPausePanel.SetActive(false);
+
+        // Show the custom unlock panel
+        if (customPanel) customPanel.SetActive(true);
+    }
+
+    // Small component just to host coroutines
+    private class CoroutineRunner : MonoBehaviour { }
 
     // ----- Color helpers -----
     Color GetTypeColor(CollectibleType t)
@@ -103,6 +145,7 @@ public class Collectible : MonoBehaviour
         return Color.white;
     }
 
+    // Tint the spawned FX instance (all child ParticleSystems & Renderers)
     void TintFX(ParticleSystem root, Color c)
     {
         if (!root) return;
@@ -111,6 +154,7 @@ public class Collectible : MonoBehaviour
         foreach (var ps in systems)
         {
             var main = ps.main;
+            // Preserve alpha from existing startColor if set
             float a = 1f;
             if (main.startColor.mode == ParticleSystemGradientMode.Color)
                 a = main.startColor.color.a;
@@ -132,6 +176,7 @@ public class Collectible : MonoBehaviour
         }
     }
 
+    // Spawns a tiny audio object so the clip finishes even after the pickup is destroyed.
     static void PlayDetached(AudioClip clip, Vector3 pos, AudioSource template, float volume)
     {
         if (!clip) return;
@@ -142,6 +187,7 @@ public class Collectible : MonoBehaviour
             go.transform.position = pos;
             var au = go.AddComponent<AudioSource>();
 
+            // Copy relevant spatial settings
             au.spatialBlend = template.spatialBlend;
             au.rolloffMode = template.rolloffMode;
             au.minDistance = template.minDistance;
