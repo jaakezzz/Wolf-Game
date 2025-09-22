@@ -4112,6 +4112,9 @@ MonoBehaviour:
   deathVFX: {fileID: 460581811698201949, guid: ea0426955bc4fec448bcd03877f11354, type: 3}
   vfxOffset: {x: 0, y: 1, z: 0}
   vfxScale: 1
+  speedPickupPrefab: {fileID: 5285892602841293987, guid: bc34a1e996e115c42933d40ac1182384, type: 3}
+  healPickupPrefab: {fileID: 8449068647432487215, guid: 5b60c123e23cdfc419c96d084b78a02f, type: 3}
+  dropOffset: {x: 0, y: 0.5, z: 0}
 --- !u!114 &9222890014891526698
 MonoBehaviour:
   m_ObjectHideFlags: 0

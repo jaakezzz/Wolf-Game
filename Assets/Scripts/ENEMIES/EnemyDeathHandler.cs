@@ -20,6 +20,14 @@ public class EnemyDeathHandler : MonoBehaviour
     public Vector3 vfxOffset = new Vector3(0f, 0.8f, 0f);
     [Min(0.01f)] public float vfxScale = 1f;
 
+    [Header("Drops")]
+    [Tooltip("Speed powerup prefab (e.g., your collectible).")]
+    public GameObject speedPickupPrefab;
+    [Tooltip("Heal powerup prefab (e.g., your collectible).")]
+    public GameObject healPickupPrefab;
+    [Tooltip("Where to spawn the drop relative to the enemy.")]
+    public Vector3 dropOffset = new Vector3(0f, 0.5f, 0f);
+
     NavMeshAgent agent;
     Collider[] cols;
     Rigidbody rb;
@@ -58,7 +66,55 @@ public class EnemyDeathHandler : MonoBehaviour
             if (Mathf.Abs(vfxScale - 1f) > 0.001f) vfx.transform.localScale *= vfxScale;
         }
 
+        // NEW: decide and spawn a drop
+        MaybeSpawnDrop();
+
         StartCoroutine(DespawnRoutine());
+    }
+
+    void MaybeSpawnDrop()
+    {
+        // Figure out if the player's run is already unlocked
+        bool runUnlocked = false;
+        var gm = GameManager.I;
+        if (gm && gm.player)
+        {
+            var motor = gm.player.GetComponent<PlayerMotor>();
+            if (motor) runUnlocked = motor.runUnlocked;
+        }
+
+        // Choose outcome
+        // If run is unlocked -> 50% heal, 50% nothing
+        // If not unlocked -> 1/3 nothing, 1/3 speed, 1/3 heal
+        Vector3 spawnPos = transform.position + dropOffset;
+
+        if (runUnlocked)
+        {
+            // 0.5 heal, 0.5 nothing
+            if (Random.value < 0.5f)
+            {
+                if (healPickupPrefab) Instantiate(healPickupPrefab, spawnPos, Quaternion.identity);
+            }
+            // else: nothing
+            return;
+        }
+        else
+        {
+            float r = Random.value; // [0,1)
+            if (r < 1f / 3f)
+            {
+                // nothing
+                return;
+            }
+            else if (r < 2f / 3f)
+            {
+                if (speedPickupPrefab) Instantiate(speedPickupPrefab, spawnPos, Quaternion.identity);
+            }
+            else
+            {
+                if (healPickupPrefab) Instantiate(healPickupPrefab, spawnPos, Quaternion.identity);
+            }
+        }
     }
 
     IEnumerator DespawnRoutine()

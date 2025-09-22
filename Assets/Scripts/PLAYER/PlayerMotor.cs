@@ -31,7 +31,7 @@ public class PlayerMotor : MonoBehaviour
     public bool holdToRun = true;
 
     // Back-compat: current speed used this frame (read by other scripts)
-    public float speed = 6f;
+    public float speed = 4f;
 
     public float gravity = -20f;       // negative
     public float jumpForce = 6f;

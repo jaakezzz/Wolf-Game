@@ -1,31 +1,63 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Animator), typeof(CharacterController))]
+[RequireComponent(typeof(CharacterController))]
 public class WolfAnimatorBridge : MonoBehaviour
 {
-    Animator anim;
+    [Header("Refs")]
+    [SerializeField] Animator anim;              // assign PlayerRoot's Animator
     CharacterController cc;
-    Vector3 lastPos;
+
+    [Header("Animator Params")]
+    [SerializeField] string speedParam = "Speed";
+    [SerializeField] float dampTime = 0.05f;     // smoothing for SetFloat damping
+
+    [Header("Speed Feed (1.0 = walk)")]
+    [Tooltip("When ON, Speed param ~= (m/s) / walkSpeedRef. So 1.0 ~ walk, 1.5 ~ run if run is ~1.5x walk.")]
+    [SerializeField] bool normalizeWithWalk = true;
+    [SerializeField] float walkSpeedRef = 4f;    // your actual walk speed in m/s
+
+    [Header("Triggers")]
+    [SerializeField] string attack1Trigger = "Attack1";
+    [SerializeField] string attack2Trigger = "Attack2";
+    [SerializeField] string dieTrigger = "Die";
+
+    int speedHash;
+
+    void Reset()
+    {
+        anim = GetComponentInChildren<Animator>();
+    }
 
     void Awake()
     {
-        anim = GetComponentInChildren<Animator>();
+        if (!anim) anim = GetComponentInChildren<Animator>();
         cc = GetComponent<CharacterController>();
-        lastPos = transform.position;
+        speedHash = Animator.StringToHash(speedParam);
     }
 
     void Update()
     {
-        // Calculate horizontal speed
-        Vector3 delta = transform.position - lastPos;
-        delta.y = 0f;
-        float speed = delta.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
-        lastPos = transform.position;
+        // planar m/s from CharacterController
+        Vector3 v = cc.velocity; v.y = 0f;
+        float mps = v.magnitude;
 
-        // Normalize into 0 (idle), 1 (walk), 2 (run)
-        anim.SetFloat("Speed", speed / 6f * 2f); // adjust 6f if PlayerMotor speed changes
+        float value = normalizeWithWalk
+            ? (mps / Mathf.Max(0.0001f, walkSpeedRef))   // 1.0 = walk
+            : mps;                                       // raw m/s
+
+        anim.SetFloat(speedHash, value, dampTime, Time.deltaTime);
     }
 
-    public void TriggerAttack() => anim.SetTrigger("Attack");
-    public void TriggerDie() => anim.SetTrigger("Die");
+    // ------ External helpers used by other scripts ------
+    public void TriggerAttack1() { if (anim && !string.IsNullOrEmpty(attack1Trigger)) anim.SetTrigger(attack1Trigger); }
+    public void TriggerAttack2() { if (anim && !string.IsNullOrEmpty(attack2Trigger)) anim.SetTrigger(attack2Trigger); }
+    
+    //public void TriggerAttack() => TriggerAttack1(); // convenience / legacy
+    public void TriggerDie() { if (anim && !string.IsNullOrEmpty(dieTrigger)) anim.SetTrigger(dieTrigger); }
+
+    // Optional tuning at runtime
+    public void SetWalkSpeedReference(float metersPerSecond) =>
+        walkSpeedRef = Mathf.Max(0.01f, metersPerSecond);
+
+    public void UseRawMetersPerSecond(bool useRaw) => normalizeWithWalk = !useRaw;
 }
