@@ -13,10 +13,10 @@ public class PlayerMotor : MonoBehaviour
     public void SetJumpEnabled(bool v) { jumpEnabled = v; }
     public bool IsExternallyLocked() { return externalLock; }
 
-    // --- Ability unlocks (NEW) ---
+    // --- Ability unlocks ---
     [Header("Ability Unlocks")]
-    public bool runUnlocked = true;         // gate for running (can be flipped by pickups)
-    public bool jumpUnlocked = true;        // gate for jumping (can be flipped by pickups)
+    public bool runUnlocked = true;          // gate for running
+    public bool jumpUnlocked = true;         // gate for jumping
     public bool startWithRunToggled = false; // only used if holdToRun = false
 
     // --- Movement ---
@@ -44,7 +44,7 @@ public class PlayerMotor : MonoBehaviour
 
     // --- Attacks ---
     [Header("Attacks")]
-    public Animator animator;                 // wolf Animator
+    public Animator animator;                 // wolf Animator (for attack triggers only)
     public string attack1Trigger = "Attack1";
     public string attack2Trigger = "Attack2";
     public KeyCode attack1Key = KeyCode.Mouse0;
@@ -54,11 +54,6 @@ public class PlayerMotor : MonoBehaviour
     public bool lockMoveDuringAttack = false;
     public float attack1LockTime = 0.35f;
     public float attack2LockTime = 0.45f;
-
-    // --- Animator (optional) ---
-    [Header("Animator Locomotion (optional)")]
-    public string speedParam = "Speed";   // matches your Animator param
-    public bool driveAnimatorSpeed = true;
 
     CharacterController cc;
     float vertVel;
@@ -72,18 +67,11 @@ public class PlayerMotor : MonoBehaviour
     // run toggle state (if not hold-to-run)
     bool runToggled;
 
-    // animator param cache
-    int speedHash;
-    bool hasSpeedParam;
-
     void Awake()
     {
         cc = GetComponent<CharacterController>();
         if (!animator) animator = GetComponentInChildren<Animator>();
         melee = GetComponent<PlayerMelee>();
-
-        speedHash = Animator.StringToHash(speedParam);
-        hasSpeedParam = animator != null;
 
         runToggled = startWithRunToggled;
 
@@ -123,9 +111,7 @@ public class PlayerMotor : MonoBehaviour
         {
             if (cc && !cc.isGrounded)
                 cc.Move(Vector3.down * groundStick * dt);
-
-            FeedAnimatorSpeed(0f);
-            return;
+            return; // <-- no animator driving here
         }
 
         // ---- Input (WASD relative to camera)
@@ -171,24 +157,8 @@ public class PlayerMotor : MonoBehaviour
 
         cc.Move(velocity * dt);
 
-        // Animator speed feed
-        Vector3 planar = cc.velocity; planar.y = 0f;
-        FeedAnimatorSpeed(planar.magnitude);
-    }
-
-    void FeedAnimatorSpeed(float planarSpeed)
-    {
-        if (!driveAnimatorSpeed || !animator) return;
-
-        if (!hasSpeedParam)
-        {
-            foreach (var p in animator.parameters)
-                if (p.type == AnimatorControllerParameterType.Float && p.nameHash == speedHash)
-                { hasSpeedParam = true; break; }
-            if (!hasSpeedParam) return;
-        }
-
-        animator.SetFloat(speedHash, planarSpeed);
+        // NOTE: we are NOT feeding animator locomotion params anymore.
+        // Keep your blend tree driven by whatever *else* you want (e.g., separate component).
     }
 
     // --- Attacks ---

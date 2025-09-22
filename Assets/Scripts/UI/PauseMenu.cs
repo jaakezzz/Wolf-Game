@@ -4,23 +4,25 @@ using UnityEngine.SceneManagement;
 public class PauseMenu : MonoBehaviour
 {
     [Header("UI Panels")]
-    public GameObject hud;
-    public GameObject pauseMenu;
+    public GameObject hud;                 // gameplay HUD
+    public GameObject pauseMenu;           // standard pause panel
 
     [Header("Special Panels")]
-    public GameObject unlockedSpeedCanvas;
+    public GameObject unlockedSpeedCanvas; // optional: “Unlocked Speed” panel
 
     [Header("Controls")]
     public KeyCode pauseKey = KeyCode.Escape;
-    public MonoBehaviour[] disableWhilePaused;
+    public MonoBehaviour[] disableWhilePaused; // e.g., PlayerMotor, camera look
 
     bool paused;
 
     void Start()
     {
+        // Start unpaused with HUD on, pause panel off
         SetPaused(false);
         if (pauseMenu) pauseMenu.SetActive(false);
         if (hud) hud.SetActive(true);
+        if (unlockedSpeedCanvas) unlockedSpeedCanvas.SetActive(false);
     }
 
     void Update()
@@ -31,29 +33,38 @@ public class PauseMenu : MonoBehaviour
 
     public void TogglePause() => SetPaused(!paused);
 
+    // Primary pause toggler
     public void SetPaused(bool p)
     {
         paused = p;
 
+        // Time & cursor
         Time.timeScale = paused ? 0f : 1f;
         Cursor.visible = paused;
         Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked;
 
+        // Panels
         if (hud) hud.SetActive(!paused);
         if (pauseMenu) pauseMenu.SetActive(paused);
 
-        foreach (var m in disableWhilePaused)
-            if (m) m.enabled = !paused;
+        // Enable/disable gameplay scripts
+        if (disableWhilePaused != null)
+        {
+            for (int i = 0; i < disableWhilePaused.Length; i++)
+            {
+                var m = disableWhilePaused[i];
+                if (m) m.enabled = !paused;
+            }
+        }
     }
 
-    // --- Existing buttons ---
+    // --- UI Buttons ---
     public void OnResumeButton()
     {
-        // If the special unlock panel is open, hide it
+        // Hide the special unlock panel if it’s up
         if (unlockedSpeedCanvas && unlockedSpeedCanvas.activeSelf)
             unlockedSpeedCanvas.SetActive(false);
 
-        // Resume normal gameplay
         SetPaused(false);
     }
 
