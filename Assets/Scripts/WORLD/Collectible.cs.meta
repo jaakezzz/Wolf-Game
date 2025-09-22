@@ -1,2 +1,17 @@
 fileFormatVersion: 2
 guid: 6e2ce61bcac4b124ea6c84d625bd2dc1
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - pickupFX: {instanceID: 0}
+  - sfx: {instanceID: 0}
+  - healClip: {instanceID: 0}
+  - speedClip: {instanceID: 0}
+  - pointsClip: {instanceID: 0}
+  - winClip: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

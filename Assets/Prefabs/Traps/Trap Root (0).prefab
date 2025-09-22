@@ -79,7 +79,11 @@ MonoBehaviour:
   autoReset: 1
   resetDelay: 6
   sfx: {fileID: 0}
-  snapClip: {fileID: 0}
+  openClip: {fileID: 0}
+  closeClip: {fileID: 8300000, guid: 882985536b248fa4fa575b23851c4c16, type: 3}
+  snapClip: {fileID: 8300000, guid: 882985536b248fa4fa575b23851c4c16, type: 3}
+  sfxVolume: 1
+  playOpenOnStart: 0
 --- !u!1001 &3617021162230738047
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -73,6 +73,11 @@ MonoBehaviour:
   damage: 6
   cooldown: 0.5
   knockbackForce: 5
+  upwardBoost: 0.5
+  sfx: {fileID: 0}
+  hitClip: {fileID: 8300000, guid: b10e469f459b3bb40b64687297e6ea65, type: 3}
+  sfxVolume: 1
+  hitOffset: 0.55
 --- !u!65 &8966275851743572488
 BoxCollider:
   m_ObjectHideFlags: 0

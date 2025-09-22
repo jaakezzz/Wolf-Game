@@ -5,28 +5,46 @@ using UnityEngine;
 public class PlayerMotor : MonoBehaviour
 {
     // --- External control (Sit/Trap/etc) ---
-    bool externalLock;                 // hard lock: ignore movement & jump
-    bool jumpEnabled = true;           // allow/disallow jump while otherwise movable
-    [SerializeField] float groundStick = 3f; // small downward push while locked
+    bool externalLock;                      // hard lock: ignore movement & jump
+    bool jumpEnabled = true;                // temporary on/off (e.g., traps, sit)
+    [SerializeField] float groundStick = 3f;
 
     public void SetExternalLock(bool v) { externalLock = v; }
     public void SetJumpEnabled(bool v) { jumpEnabled = v; }
     public bool IsExternallyLocked() { return externalLock; }
 
+    // --- Ability unlocks (NEW) ---
+    [Header("Ability Unlocks")]
+    public bool runUnlocked = true;         // gate for running (can be flipped by pickups)
+    public bool jumpUnlocked = true;        // gate for jumping (can be flipped by pickups)
+    public bool startWithRunToggled = false; // only used if holdToRun = false
+
     // --- Movement ---
+    [Header("Movement")]
+    [Tooltip("Meters per second when walking.")]
+    public float walkSpeed = 4f;
+    [Tooltip("Meters per second when running.")]
+    public float runSpeed = 7.5f;
+
+    [Tooltip("Hold this key to run (or toggle if Hold To Run is off).")]
+    public KeyCode runKey = KeyCode.LeftShift;
+    public bool holdToRun = true;
+
+    // Back-compat: current speed used this frame (read by other scripts)
     public float speed = 6f;
+
     public float gravity = -20f;       // negative
     public float jumpForce = 6f;
     public Transform cam;
     public Vector3 externalImpulse;
 
     [Header("Jump Reliability")]
-    public float coyoteTime = 0.12f;   // still jump shortly after leaving ground
-    public float jumpBuffer = 0.12f;   // accept jump slightly before landing
+    public float coyoteTime = 0.12f;
+    public float jumpBuffer = 0.12f;
 
     // --- Attacks ---
     [Header("Attacks")]
-    public Animator animator;                 // drag the wolf Animator here (or auto-found)
+    public Animator animator;                 // wolf Animator
     public string attack1Trigger = "Attack1";
     public string attack2Trigger = "Attack2";
     public KeyCode attack1Key = KeyCode.Mouse0;
@@ -37,25 +55,65 @@ public class PlayerMotor : MonoBehaviour
     public float attack1LockTime = 0.35f;
     public float attack2LockTime = 0.45f;
 
+    // --- Animator (optional) ---
+    [Header("Animator Locomotion (optional)")]
+    public string speedParam = "Speed";   // matches your Animator param
+    public bool driveAnimatorSpeed = true;
+
     CharacterController cc;
     float vertVel;
     bool stunned;
-    bool attackLocked;                 // internal lock while swinging
+    bool attackLocked;
     float coyoteTimer;
     float bufferTimer;
-    int ignoreGroundedFrames;          // prevents slope from canceling jump
-    PlayerMelee melee;   // cache reference
+    int ignoreGroundedFrames;
+    PlayerMelee melee;
+
+    // run toggle state (if not hold-to-run)
+    bool runToggled;
+
+    // animator param cache
+    int speedHash;
+    bool hasSpeedParam;
 
     void Awake()
     {
         cc = GetComponent<CharacterController>();
         if (!animator) animator = GetComponentInChildren<Animator>();
-        melee = GetComponent<PlayerMelee>();   // find the PlayerMelee script
+        melee = GetComponent<PlayerMelee>();
+
+        speedHash = Animator.StringToHash(speedParam);
+        hasSpeedParam = animator != null;
+
+        runToggled = startWithRunToggled;
+
+        // Initialize speed respecting run unlock + input mode
+        if (!runUnlocked)
+            speed = walkSpeed;
+        else if (holdToRun)
+            speed = Input.GetKey(runKey) ? runSpeed : walkSpeed;
+        else
+            speed = (runToggled ? runSpeed : walkSpeed);
     }
 
     void Update()
     {
         float dt = Time.deltaTime;
+
+        // --- Run input (compute 'speed' BEFORE using it) ---
+        if (!runUnlocked)
+        {
+            speed = walkSpeed;
+        }
+        else if (holdToRun)
+        {
+            speed = Input.GetKey(runKey) ? runSpeed : walkSpeed;
+        }
+        else
+        {
+            if (Input.GetKeyDown(runKey)) runToggled = !runToggled;
+            speed = runToggled ? runSpeed : walkSpeed;
+        }
 
         // --- Handle attack input even when moving ---
         HandleAttackInput();
@@ -63,9 +121,10 @@ public class PlayerMotor : MonoBehaviour
         // --- Hard locks (stun, external lock, or attack lock) ---
         if (stunned || externalLock || attackLocked)
         {
-            // keep controller grounded so we don’t hover on slopes
             if (cc && !cc.isGrounded)
                 cc.Move(Vector3.down * groundStick * dt);
+
+            FeedAnimatorSpeed(0f);
             return;
         }
 
@@ -82,22 +141,22 @@ public class PlayerMotor : MonoBehaviour
         if (grounded) coyoteTimer = coyoteTime;
         else coyoteTimer -= dt;
 
-        // Jump buffer (only when jump is enabled)
-        if (jumpEnabled && Input.GetButtonDown("Jump")) bufferTimer = jumpBuffer;
+        // Buffer jump input (requires ability + temporary enable)
+        if (jumpUnlocked && jumpEnabled && Input.GetButtonDown("Jump")) bufferTimer = jumpBuffer;
         else bufferTimer -= dt;
 
-        // Apply buffered / coyote jump
-        if (jumpEnabled && bufferTimer > 0f && coyoteTimer > 0f)
+        // Apply buffered / coyote jump (only if unlocked + enabled)
+        if (jumpUnlocked && jumpEnabled && bufferTimer > 0f && coyoteTimer > 0f)
         {
             vertVel = jumpForce;
             bufferTimer = 0f;
             coyoteTimer = 0f;
-            ignoreGroundedFrames = 2;  // let us fully leave the slope
+            ignoreGroundedFrames = 2;
         }
 
         // Gravity & stick-to-ground
         if (grounded && vertVel < 0f)
-            vertVel = -2f;                 // small downward bias
+            vertVel = -2f;
         vertVel += gravity * dt;
 
         Vector3 velocity = moveXZ;
@@ -107,10 +166,29 @@ public class PlayerMotor : MonoBehaviour
         if (externalImpulse.sqrMagnitude > 0.01f)
         {
             velocity += externalImpulse;
-            externalImpulse = Vector3.Lerp(externalImpulse, Vector3.zero, 5f * dt); // smooth decay
+            externalImpulse = Vector3.Lerp(externalImpulse, Vector3.zero, 5f * dt);
         }
 
         cc.Move(velocity * dt);
+
+        // Animator speed feed
+        Vector3 planar = cc.velocity; planar.y = 0f;
+        FeedAnimatorSpeed(planar.magnitude);
+    }
+
+    void FeedAnimatorSpeed(float planarSpeed)
+    {
+        if (!driveAnimatorSpeed || !animator) return;
+
+        if (!hasSpeedParam)
+        {
+            foreach (var p in animator.parameters)
+                if (p.type == AnimatorControllerParameterType.Float && p.nameHash == speedHash)
+                { hasSpeedParam = true; break; }
+            if (!hasSpeedParam) return;
+        }
+
+        animator.SetFloat(speedHash, planarSpeed);
     }
 
     // --- Attacks ---
@@ -134,21 +212,25 @@ public class PlayerMotor : MonoBehaviour
         if (melee)
         {
             if (triggerName == attack1Trigger)
+            {
                 melee.TriggerAttack1();
+                GetComponent<PlayerAudio>()?.PlayAttack1();
+            }
             else if (triggerName == attack2Trigger)
+            {
                 melee.TriggerAttack2();
+                GetComponent<PlayerAudio>()?.PlayAttack2();
+            }
         }
 
         if (lockMoveDuringAttack && lockTime > 0f)
             StartCoroutine(AttackLock(lockTime));
     }
 
-
     IEnumerator AttackLock(float t)
     {
         attackLocked = true;
-        // Also cancel any jump buffer during the lock to avoid instant jump after
-        bufferTimer = 0f;
+        bufferTimer = 0f; // cancel any jump buffer
         yield return new WaitForSeconds(t);
         attackLocked = false;
     }
@@ -169,4 +251,12 @@ public class PlayerMotor : MonoBehaviour
     {
         externalImpulse += impulse;
     }
+
+    // --- Public API for pickups / scripts ---
+    public void SetRunUnlocked(bool v) { runUnlocked = v; }
+    public void SetJumpUnlocked(bool v) { jumpUnlocked = v; }
+    public void UnlockRun() => runUnlocked = true;
+    public void UnlockJump() => jumpUnlocked = true;
+    public void LockRun() => runUnlocked = false;
+    public void LockJump() => jumpUnlocked = false;
 }

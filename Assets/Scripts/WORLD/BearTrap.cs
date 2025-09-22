@@ -19,10 +19,27 @@ public class BearTrap : MonoBehaviour
 
     [Header("SFX")]
     public AudioSource sfx;
-    public AudioClip snapClip;
+    public AudioClip openClip;       // plays when the trap opens
+    public AudioClip closeClip;      // plays when the trap closes
+    [Range(0f, 1f)] public float sfxVolume = 1f;
+    [Tooltip("Play the open sound the very first time (on scene start).")]
+    public bool playOpenOnStart = false;
 
     bool armed = true;
     bool busy;
+
+    void Awake()
+    {
+        // Ensure we have an AudioSource
+        if (!sfx)
+        {
+            sfx = GetComponent<AudioSource>();
+            if (!sfx) sfx = gameObject.AddComponent<AudioSource>();
+        }
+        sfx.playOnAwake = false;
+        sfx.spatialBlend = 1f; // 3D
+        sfx.volume = sfxVolume;
+    }
 
     void Reset()
     {
@@ -35,20 +52,28 @@ public class BearTrap : MonoBehaviour
     {
         if (!triggerArea) triggerArea = GetComponent<Collider>();
         SetVisual(armed);
+        if (sfx) sfx.volume = sfxVolume;
     }
 
     void Start()
     {
         if (!triggerArea) triggerArea = GetComponent<Collider>();
-        Arm(true);
+        Arm(true, fromResetOrExplicit: playOpenOnStart);
     }
 
-    void Arm(bool state)
+    void Arm(bool state, bool fromResetOrExplicit = false)
     {
         armed = state;
         busy = false;
+
         if (triggerArea) triggerArea.enabled = state;
         SetVisual(open: state);
+
+        if (fromResetOrExplicit)
+        {
+            if (state) PlayOneShotSafe(openClip);
+            else PlayOneShotSafe(closeClip);
+        }
     }
 
     void SetVisual(bool open)
@@ -69,17 +94,15 @@ public class BearTrap : MonoBehaviour
     {
         busy = true;
         armed = false;
+
         SetVisual(open: false);
+        PlayOneShotSafe(closeClip);
 
-        if (sfx && snapClip) sfx.PlayOneShot(snapClip);
-
-        // Damage the player (uses your existing Health component)
         var hp = victim.GetComponentInParent<Health>();
         if (hp) hp.Damage(damage);
 
-        // Stun the player if they have a PlayerMotor
         var motor = victim.GetComponentInParent<PlayerMotor>();
-        if (motor) motor.Stun(1f);  // stun duration
+        if (motor) motor.Stun(1f);
 
         if (destroyAfterTrigger)
         {
@@ -90,15 +113,22 @@ public class BearTrap : MonoBehaviour
 
         if (autoReset)
         {
-            // disable trigger for a moment so we don't insta-retrigger
             if (triggerArea) triggerArea.enabled = false;
             yield return new WaitForSeconds(resetDelay);
-            Arm(true);
+            Arm(true, fromResetOrExplicit: true);
         }
         else
         {
-            // one-shot trap: leave closed & disable trigger
             if (triggerArea) triggerArea.enabled = false;
+        }
+    }
+
+    void PlayOneShotSafe(AudioClip clip)
+    {
+        if (clip && sfx)
+        {
+            sfx.volume = sfxVolume;
+            sfx.PlayOneShot(clip, sfxVolume);
         }
     }
 }

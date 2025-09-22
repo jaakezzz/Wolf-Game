@@ -21,24 +21,32 @@ public class SimpleChaseCamera : MonoBehaviour
     public LayerMask collideMask;   // MUST include Terrain/Ground + Environment, exclude Player
 
     [Header("Smoothing")]
-    public float followLerp = 12f;
-    public float camLerp = 20f;
+    public float followLerp = 12f;  // smoothing of the *target position*
+    public float camLerp = 20f;     // smoothing of the camera itself
 
-    Vector3 curPos; Quaternion curRot;
+    // runtime state
+    Vector3 curPos;
+    Quaternion curRot;
+    Vector3 followPos;              // smoothed target position (virtual anchor)
 
     void Start()
     {
         if (!cam) cam = GetComponentInChildren<Camera>();
-        curPos = cam ? cam.transform.position : transform.position;
-        curRot = cam ? cam.transform.rotation : transform.rotation;
+        if (!target || !cam) return;
+
+        followPos = target.position;                  // start anchored at target
+        curPos = cam.transform.position;
+        curRot = cam.transform.rotation;
     }
 
     void Update()
     {
+        // Mouse orbit (unscaled so it still works if the game pauses)
         yaw += Input.GetAxis("Mouse X") * yawSpeed * Time.unscaledDeltaTime;
         pitch -= Input.GetAxis("Mouse Y") * pitchSpeed * Time.unscaledDeltaTime;
         pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
+        // Scroll zoom
         float scroll = Input.mouseScrollDelta.y;
         if (Mathf.Abs(scroll) > 0.001f)
             distance = Mathf.Clamp(distance - scroll, minDistance, maxDistance);
@@ -48,42 +56,42 @@ public class SimpleChaseCamera : MonoBehaviour
     {
         if (!target || !cam) return;
 
-        // Anchor follows target (no tilt)
-        transform.position = Vector3.Lerp(
-            transform.position, target.position,
-            1f - Mathf.Exp(-followLerp * Time.deltaTime));
+        // --- 1) Smooth a *virtual* follow position (we no longer move this transform) ---
+        float kFollow = 1f - Mathf.Exp(-followLerp * Time.deltaTime);
+        followPos = Vector3.Lerp(followPos, target.position, kFollow);
 
-        // World-up basis (stable)
+        // --- 2) Build a world-up basis (stable, no tilt drift) ---
         Vector3 up = Vector3.up;
         Quaternion yawQ = Quaternion.AngleAxis(yaw, up);
         Vector3 fwd = yawQ * Vector3.forward;
         Vector3 right = Vector3.Cross(up, fwd);
         Vector3 camFwd = Quaternion.AngleAxis(pitch, right) * fwd;
 
-        // Orbit from a lifted center
-        Vector3 orbitCenter = transform.position + up * height;
+        // --- 3) Desired camera from lifted orbit center ---
+        Vector3 orbitCenter = followPos + up * height;
         Vector3 desired = orbitCenter - camFwd * distance;
-        Quaternion drot = Quaternion.LookRotation(camFwd, up);
+        Quaternion desiredRot = Quaternion.LookRotation(camFwd, up);
 
-        // Collision from orbit center to desired
-        Vector3 dir = desired - orbitCenter;
-        float len = dir.magnitude;
-        dir = (len > 1e-4f) ? dir / len : -camFwd;
+        // --- 4) Collision push-in from orbit center to desired ---
+        Vector3 ray = desired - orbitCenter;
+        float len = ray.magnitude;
+        Vector3 dir = (len > 1e-4f) ? ray / len : -camFwd;
 
-        if (Physics.SphereCast(orbitCenter, collisionRadius, dir,
-                out var hit, len, collideMask, QueryTriggerInteraction.Ignore))
+        if (Physics.SphereCast(orbitCenter, collisionRadius, dir, out var hit, len, collideMask, QueryTriggerInteraction.Ignore))
             desired = hit.point - dir * collisionPadding;
 
-        // Keep a little clearance above ground
+        // keep a little clearance above ground (prevents ground flicker)
         if (Physics.Raycast(desired + up * 0.5f, -up, out var floorHit, 2f, collideMask))
         {
             float h = Vector3.Dot(desired - floorHit.point, up);
             if (h < minGroundClearance) desired = floorHit.point + up * minGroundClearance;
         }
 
-        // Smooth
-        curPos = Vector3.Lerp(curPos, desired, 1f - Mathf.Exp(-camLerp * Time.deltaTime));
-        curRot = Quaternion.Slerp(curRot, drot, 1f - Mathf.Exp(-camLerp * Time.deltaTime));
+        // --- 5) Smooth camera towards desired (single smoothing stage) ---
+        float kCam = 1f - Mathf.Exp(-camLerp * Time.deltaTime);
+        curPos = Vector3.Lerp(curPos, desired, kCam);
+        curRot = Quaternion.Slerp(curRot, desiredRot, kCam);
+
         cam.transform.SetPositionAndRotation(curPos, curRot);
     }
 }

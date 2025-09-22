@@ -6,6 +6,7 @@ public class Health : MonoBehaviour
     public float maxHP = 100f;
     public float currentHP;
     public UnityEvent onDeath;
+    public UnityEvent onHurt;
     public UnityEvent<float, float> onHealthChanged; // current, max
 
     bool dead;
@@ -22,6 +23,8 @@ public class Health : MonoBehaviour
         if (dead) return;                               // <— ignore after death
         currentHP = Mathf.Max(0f, currentHP - dmg);
         onHealthChanged?.Invoke(currentHP, maxHP);
+        if (dmg > 0f && currentHP > 0f)   // still alive after damage
+            onHurt?.Invoke();
         if (currentHP <= 0f) Die();
     }
 

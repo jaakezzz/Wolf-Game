@@ -9,9 +9,11 @@ public class PlayerDeathHandler : MonoBehaviour
     public CharacterController cc;
 
     [Header("Animation")]
-    public Animator anim;                    // (optional) reference to wolf child Animator
-    [Tooltip("Seconds to show the death animation before GM decides (respawn or game over).")]
+    public Animator anim;
     public float deathAnimDuration = 1.0f;
+
+    // NEW: optional – auto-found
+    public ModelGroundAlignAndFace faceAlign;
 
     Collider[] colliders;
     Rigidbody rb;
@@ -24,12 +26,14 @@ public class PlayerDeathHandler : MonoBehaviour
         colliders = GetComponentsInChildren<Collider>(true);
         rb = GetComponent<Rigidbody>();
 
-        // Fallback: auto-find a child animator with a controller (nice-to-have)
         if (!anim || !anim.runtimeAnimatorController)
         {
             anim = GetComponentsInChildren<Animator>(true)
                    .FirstOrDefault(a => a && a.runtimeAnimatorController);
         }
+
+        // NEW: auto-find if not assigned
+        if (!faceAlign) faceAlign = GetComponent<ModelGroundAlignAndFace>();
     }
 
     void Start()
@@ -43,7 +47,6 @@ public class PlayerDeathHandler : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        // Stop control/collisions but KEEP renderers visible for death anim
         if (cc) cc.enabled = false;
         if (rb)
         {
@@ -54,12 +57,13 @@ public class PlayerDeathHandler : MonoBehaviour
         foreach (var c in colliders) if (c) c.enabled = false;
         foreach (var s in controlScripts) if (s) s.enabled = false;
 
-        // Prefer the bridge trigger; fallback to direct trigger
+        // NEW: stop the facing script so the model can’t spin
+        if (faceAlign) faceAlign.enabled = false;
+
         var bridge = GetComponent<WolfAnimatorBridge>();
         if (bridge != null) bridge.TriggerDie();
         else if (anim && anim.runtimeAnimatorController) anim.SetTrigger("Die");
 
-        // After the short death anim delay, let GameManager decide (lives -> respawn or game over)
         StartCoroutine(NotifyGMAfter(deathAnimDuration));
     }
 
@@ -78,6 +82,9 @@ public class PlayerDeathHandler : MonoBehaviour
         if (cc) cc.enabled = !dead;
         foreach (var c in colliders) if (c) c.enabled = !dead;
         foreach (var s in controlScripts) if (s) s.enabled = !dead;
+
+        // NEW: re-enable facing on revive
+        if (faceAlign) faceAlign.enabled = !dead;
 
         if (!dead && anim && anim.runtimeAnimatorController)
         {

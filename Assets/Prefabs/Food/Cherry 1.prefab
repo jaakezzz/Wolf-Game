@@ -168,4 +168,14 @@ MonoBehaviour:
   healAmount: 45
   speedBoost: 2
   speedDuration: 5
-  pickupFX: {fileID: 0}
+  pickupFX: {fileID: 7287639416097900145, guid: 65a517f55d40dfa4c9a23b2143ddeb6c, type: 3}
+  healColor: {r: 1, g: 0.89202094, b: 0.2830189, a: 1}
+  speedColor: {r: 0, g: 0.9056604, b: 0.17787941, a: 1}
+  pointsColor: {r: 0.88533276, g: 0.3962264, b: 1, a: 1}
+  winColor: {r: 1, g: 1, b: 1, a: 1}
+  sfx: {fileID: 0}
+  healClip: {fileID: 8300000, guid: 344c63ddfeecc424ca98dccd64ac7cf7, type: 3}
+  speedClip: {fileID: 0}
+  pointsClip: {fileID: 0}
+  winClip: {fileID: 0}
+  sfxVolume: 1

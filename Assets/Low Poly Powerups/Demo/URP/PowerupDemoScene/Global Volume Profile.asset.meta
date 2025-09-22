@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1b030a4f4f4453b49954268a28d72971
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 212079
+  packageName: Low Poly Powerups
+  packageVersion: 1.1
+  assetPath: Assets/Low Poly Powerups/Demo/URP/PowerupDemoScene/Global Volume Profile.asset
+  uploadId: 480516

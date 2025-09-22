@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f1d1f18ac387d544dab264a353c08f4a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 212079
+  packageName: Low Poly Powerups
+  packageVersion: 1.1
+  assetPath: Assets/Low Poly Powerups/Demo/URP/Rendering/UniversalRenderPipelineAsset.asset
+  uploadId: 480516

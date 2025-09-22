@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using System.Collections;
 
 public class MainMenuUI : MonoBehaviour
 {
@@ -10,23 +12,70 @@ public class MainMenuUI : MonoBehaviour
     [Header("Cursor")]
     public bool showCursor = true;
 
+    [Header("Audio")]
+    public AudioSource musicSource;     // assign in inspector
+    public AudioClip menuMusic;         // assign in inspector
+    [Range(0f, 1f)] public float musicVolume = 0.7f;
+    public float musicFadeTime = 1f;    // fade-out duration
+
+    [Header("Fade UI")]
+    public Image fadeImage;             // full-screen UI Image (black, alpha=0)
+    public float fadeTime = 1f;
+
     void OnEnable()
     {
-        // Ensure the game isn't paused if returning here
         Time.timeScale = 1f;
 
-        // Friendly cursor defaults for menus
         if (showCursor)
         {
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
+
+        // start menu music
+        if (musicSource && menuMusic)
+        {
+            musicSource.clip = menuMusic;
+            musicSource.volume = musicVolume;
+            musicSource.loop = true;
+            musicSource.Play();
+        }
+
+        if (fadeImage) fadeImage.gameObject.SetActive(true);
     }
 
     // Hook this to the Start button
     public void OnStartGame()
     {
-        // Optional: add a small SFX/animation here
+        StartCoroutine(FadeAndLoad());
+    }
+
+    IEnumerator FadeAndLoad()
+    {
+        float t = 0f;
+        float startVol = musicSource ? musicSource.volume : 0f;
+
+        Color c = fadeImage ? fadeImage.color : Color.black;
+
+        while (t < fadeTime)
+        {
+            t += Time.unscaledDeltaTime;
+            float a = Mathf.Clamp01(t / fadeTime);
+
+            // fade visual
+            if (fadeImage)
+            {
+                c.a = a;
+                fadeImage.color = c;
+            }
+
+            // fade audio
+            if (musicSource)
+                musicSource.volume = Mathf.Lerp(startVol, 0f, t / musicFadeTime);
+
+            yield return null;
+        }
+
         SceneManager.LoadScene(gameSceneName);
     }
 
@@ -34,10 +83,8 @@ public class MainMenuUI : MonoBehaviour
     public void OnQuit()
     {
 #if UNITY_EDITOR
-        // Works in Editor
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        // Works in builds
         Application.Quit();
 #endif
     }

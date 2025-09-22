@@ -3900,6 +3900,7 @@ GameObject:
   - component: {fileID: 1166416056693891194}
   - component: {fileID: 3688520565059817277}
   - component: {fileID: 9222890014891526698}
+  - component: {fileID: 3875600877115433140}
   m_Layer: 6
   m_Name: minotaur1
   m_TagString: Untagged
@@ -4085,6 +4086,9 @@ MonoBehaviour:
   onDeath:
     m_PersistentCalls:
       m_Calls: []
+  onHurt:
+    m_PersistentCalls:
+      m_Calls: []
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -4105,6 +4109,9 @@ MonoBehaviour:
   sinkAfter: 1
   sinkSpeed: 1.5
   destroyAfter: 5
+  deathVFX: {fileID: 460581811698201949, guid: ea0426955bc4fec448bcd03877f11354, type: 3}
+  vfxOffset: {x: 0, y: 1, z: 0}
+  vfxScale: 1
 --- !u!114 &9222890014891526698
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4162,6 +4169,28 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
+--- !u!114 &3875600877115433140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4414871117303439921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3792f00e7af70b4e8029b6b112609e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackGrunts:
+  - {fileID: 8300000, guid: e8fe38b7aaa960d4b9147eca768691b7, type: 3}
+  - {fileID: 8300000, guid: 7c316136597ad534395c9d76d852e00d, type: 3}
+  hurtClip: {fileID: 8300000, guid: da72912c6381bbb478ef87a009e58bcf, type: 3}
+  deathClips:
+  - {fileID: 8300000, guid: deb4a914b9e675649b438ddcacdf66e7, type: 3}
+  - {fileID: 8300000, guid: cc4aeba14a0a33742833a14b5615efd0, type: 3}
+  sfxVolume: 1
+  pitchJitter: {x: 0.99, y: 1}
+  attackRateLimit: 0.15
 --- !u!1 &4414871117353324497
 GameObject:
   m_ObjectHideFlags: 0

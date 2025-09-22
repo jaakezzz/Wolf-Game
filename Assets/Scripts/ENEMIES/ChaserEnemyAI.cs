@@ -6,6 +6,7 @@ using UnityEngine.AI;
 [RequireComponent(typeof(Health))]
 public class ChaserEnemyAI : MonoBehaviour
 {
+    MinotaurAudio audioFx;
     public enum State { Patrol, Chase, Attack, Return }
 
     #region Refs / Animator
@@ -91,6 +92,8 @@ public class ChaserEnemyAI : MonoBehaviour
             if (p) player = p.transform;
         }
         if (!animator) animator = GetComponentInChildren<Animator>();
+
+        audioFx = GetComponent<MinotaurAudio>();
     }
 
     void OnDestroy()
@@ -246,6 +249,7 @@ public class ChaserEnemyAI : MonoBehaviour
 
         if (animator && !string.IsNullOrEmpty(attackTrigger))
             animator.SetTrigger(attackTrigger);
+        audioFx?.PlayAttack();
 
         float t = 0f;
         while (t < attackWindup)
