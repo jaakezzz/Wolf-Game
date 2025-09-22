@@ -24,7 +24,7 @@ public class PlayerMotor : MonoBehaviour
     [Tooltip("Meters per second when walking.")]
     public float walkSpeed = 4f;
     [Tooltip("Meters per second when running.")]
-    public float runSpeed = 7.5f;
+    public float runSpeed = 6f;
 
     [Tooltip("Hold this key to run (or toggle if Hold To Run is off).")]
     public KeyCode runKey = KeyCode.LeftShift;
