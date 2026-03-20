@@ -40,6 +40,7 @@ public class GhostDissolve : MonoBehaviour
         fadeCo = StartCoroutine(FadeTo(target));
     }
 
+    // Smoothly fades the material's dissolve cutoff without blocking the main thread
     IEnumerator FadeTo(float target)
     {
         float start = current;
@@ -48,6 +49,8 @@ public class GhostDissolve : MonoBehaviour
         {
             t += Time.deltaTime;
             current = Mathf.Lerp(start, target, t / fadeTime);
+
+            // Apply the updated value to the custom shader property
             foreach (var r in renderers) if (r) _Set(r, current);
             yield return null;
         }

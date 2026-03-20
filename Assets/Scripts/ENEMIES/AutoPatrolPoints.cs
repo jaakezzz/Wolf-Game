@@ -82,6 +82,7 @@ public class AutoPatrolPoints : MonoBehaviour
 
         // Generate positions
         var pts = new List<Vector3>(pointCount);
+        var validTransforms = new List<Transform>();
         Vector3 center = transform.position;
         float R = Mathf.Max(0.1f, ai.interestRadius);
 
@@ -132,6 +133,7 @@ public class AutoPatrolPoints : MonoBehaviour
             pGo.transform.rotation = Quaternion.identity;
 
             pts.Add(candidate);
+            validTransforms.Add(pGo.transform);
             created++;
         }
 
@@ -139,10 +141,7 @@ public class AutoPatrolPoints : MonoBehaviour
             Debug.LogWarning($"[AutoPatrolPoints] Only generated {created}/{pointCount} points. Try lowering minSeparation or edgeBias or raising attempts.");
 
         // Assign to AI
-        var result = new List<Transform>();
-        foreach (Transform c in container) result.Add(c);
-        // Optional: order them clockwise to reduce zig-zag
-        result.Sort((a, b) =>
+        validTransforms.Sort((a, b) =>
         {
             Vector2 ca = new Vector2(a.position.x - center.x, a.position.z - center.z);
             Vector2 cb = new Vector2(b.position.x - center.x, b.position.z - center.z);
@@ -150,7 +149,7 @@ public class AutoPatrolPoints : MonoBehaviour
             float ab = Mathf.Atan2(cb.y, cb.x);
             return aa.CompareTo(ab);
         });
-        ai.patrolPoints = result.ToArray();
+        ai.patrolPoints = validTransforms.ToArray();
     }
 
     void OnDrawGizmosSelected()

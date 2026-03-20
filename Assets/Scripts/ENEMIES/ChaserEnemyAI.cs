@@ -45,7 +45,7 @@ public class ChaserEnemyAI : MonoBehaviour
     public float eyeHeight = 1.6f;
     public float targetHeight = 1.0f;
     [Tooltip("How many seconds the AI remembers the player's position after they break line of sight.")]
-    public float memoryTime = 1.0f;
+    public float memoryTime = 3.0f;
     public bool debugVision = false;
 
     float lastSeenTime = -999f; // Initialized to a very negative number so it doesn't trigger immediately

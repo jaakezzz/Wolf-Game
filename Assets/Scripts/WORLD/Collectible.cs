@@ -45,7 +45,7 @@ public class Collectible : MonoBehaviour
         }
 
         // Find even if disabled in hierarchy
-        if (!pauseMenu) pauseMenu = FindObjectOfType<PauseMenu>(true);
+        if (!pauseMenu) pauseMenu = FindAnyObjectByType<PauseMenu>(FindObjectsInactive.Include);
     }
 
     void OnTriggerEnter(Collider other)

@@ -77,6 +77,7 @@ public class SimpleChaseCamera : MonoBehaviour
         float len = ray.magnitude;
         Vector3 dir = (len > 1e-4f) ? ray / len : -camFwd;
 
+        // cast a thick sphere along that path. If it hits a wall/tree, pull the camera inward
         if (Physics.SphereCast(orbitCenter, collisionRadius, dir, out var hit, len, collideMask, QueryTriggerInteraction.Ignore))
             desired = hit.point - dir * collisionPadding;
 

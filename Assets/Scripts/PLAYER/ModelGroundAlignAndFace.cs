@@ -76,15 +76,18 @@ public class ModelGroundAlignAndFace : MonoBehaviour
         prevPos = transform.position;
 
         // --- Ground normal via raycast, smoothed ---
+        // Read the terrain's surface normal directly beneath the player
         Vector3 origin = model.position + Vector3.up * rayStartOffset;
         Vector3 groundUp = Vector3.up;
         if (Physics.Raycast(origin, Vector3.down, out var hit, rayLength, groundMask))
         {
             groundUp = hit.normal;
+            // Clamp extreme slopes so the model doesn't flip entirely upside down
             float ang = Vector3.Angle(Vector3.up, groundUp);
             if (ang > maxTiltAngle)
                 groundUp = Vector3.Slerp(Vector3.up, groundUp, maxTiltAngle / Mathf.Max(ang, 0.001f));
         }
+        // Smoothly interpolate the model's Up vector to match the terrain slope
         smoothedUp = Vector3.Slerp(smoothedUp, groundUp, Time.deltaTime * tiltLerpSpeed);
 
         // Desired forward on the slope plane
