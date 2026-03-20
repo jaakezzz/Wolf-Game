@@ -66,6 +66,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -89,6 +91,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -133,10 +136,10 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6640961082957238970}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -180,9 +183,10 @@ MonoBehaviour:
   type: 0
   points: 50
   healAmount: 35
-  speedBoost: 2
-  speedDuration: 5
+  hungerAmount: 15
   pickupFX: {fileID: 7287639416097900145, guid: 65a517f55d40dfa4c9a23b2143ddeb6c, type: 3}
+  tintFXByType: 1
+  foodColor: {r: 0.40970984, g: 0.672864, b: 0.9339623, a: 1}
   healColor: {r: 1, g: 0.89202094, b: 0.2830189, a: 1}
   speedColor: {r: 0, g: 0.9056604, b: 0.17787941, a: 1}
   pointsColor: {r: 0.88533276, g: 0.3962264, b: 1, a: 1}
@@ -193,3 +197,5 @@ MonoBehaviour:
   pointsClip: {fileID: 0}
   winClip: {fileID: 0}
   sfxVolume: 1
+  pauseDelay: 0.75
+  pauseOnUnlock: 1

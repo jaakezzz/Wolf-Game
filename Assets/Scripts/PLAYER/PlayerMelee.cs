@@ -57,6 +57,13 @@ public class PlayerMelee : MonoBehaviour
 
             _hitThisSwing.Add(hp);
             hp.Damage(dmg);
+
+            // --- Restore hunger if we hit an enemy ---
+            if (h.GetComponentInParent<ChaserEnemyAI>())                // Check for ChaserEnemyAI specifically for now
+            {
+                var playerHunger = GetComponent<PlayerHunger>();
+                if (playerHunger) playerHunger.AddHunger(dmg/5);
+            }
         }
     }
 

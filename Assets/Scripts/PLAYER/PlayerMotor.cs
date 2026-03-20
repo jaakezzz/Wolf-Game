@@ -176,7 +176,10 @@ public class PlayerMotor : MonoBehaviour
         if (stunned || externalLock || attackLocked) return;
 
         if (animator && !string.IsNullOrEmpty(triggerName))
+        {
+            animator.ResetTrigger(triggerName);
             animator.SetTrigger(triggerName);
+        }
 
         // Hook into melee
         if (melee)

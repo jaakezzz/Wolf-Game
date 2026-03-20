@@ -49,9 +49,24 @@ public class WolfAnimatorBridge : MonoBehaviour
     }
 
     // ------ External helpers used by other scripts ------
-    public void TriggerAttack1() { if (anim && !string.IsNullOrEmpty(attack1Trigger)) anim.SetTrigger(attack1Trigger); }
-    public void TriggerAttack2() { if (anim && !string.IsNullOrEmpty(attack2Trigger)) anim.SetTrigger(attack2Trigger); }
-    
+    public void TriggerAttack1()
+    {
+        if (anim && !string.IsNullOrEmpty(attack1Trigger))
+        {
+            anim.ResetTrigger(attack1Trigger); // Wipes out ghost triggers
+            anim.SetTrigger(attack1Trigger);   // Sets the fresh trigger
+        }
+    }
+
+    public void TriggerAttack2()
+    {
+        if (anim && !string.IsNullOrEmpty(attack2Trigger))
+        {
+            anim.ResetTrigger(attack2Trigger);
+            anim.SetTrigger(attack2Trigger);
+        }
+    }
+
     //public void TriggerAttack() => TriggerAttack1(); // convenience / legacy
     public void TriggerDie() { if (anim && !string.IsNullOrEmpty(dieTrigger)) anim.SetTrigger(dieTrigger); }
 

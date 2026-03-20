@@ -150,6 +150,10 @@ public class AutoPatrolPoints : MonoBehaviour
             return aa.CompareTo(ab);
         });
         ai.patrolPoints = validTransforms.ToArray();
+        if (Application.isPlaying && container != null)
+        {
+            container.SetParent(null);
+        }
     }
 
     void OnDrawGizmosSelected()

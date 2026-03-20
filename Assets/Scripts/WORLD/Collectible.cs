@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum CollectibleType { Heal, Speed, Points, Win }
+public enum CollectibleType { Food, Heal, Speed, Points, Win }
 
 public class Collectible : MonoBehaviour
 {
@@ -9,12 +9,14 @@ public class Collectible : MonoBehaviour
     [Header("Values")]
     public int points = 50;
     public float healAmount = 30f;
+    public float hungerAmount = 15f; // for Food type
 
     [Header("Effects")]
     public ParticleSystem pickupFX;
 
     [Header("FX Tint (optional)")]
     public bool tintFXByType = true;
+    public Color foodColor = new Color(0f, 0.5f, 1f);  // blue
     public Color healColor = new Color(1f, 0.9f, 0f);  // yellow
     public Color speedColor = new Color(0f, 1f, 0f);    // green
     public Color pointsColor = new Color(1f, 0f, 1f);    // magenta
@@ -59,6 +61,13 @@ public class Collectible : MonoBehaviour
 
         switch (type)
         {
+            case CollectibleType.Food:
+                if (hp) hp.Heal(healAmount);
+                var hunger = other.GetComponent<PlayerHunger>();
+                if (hunger) hunger.AddHunger(hungerAmount);
+                clipToPlay = healClip; // reusing the heal clip
+                break;
+
             case CollectibleType.Heal:
                 if (hp) hp.Heal(healAmount);
                 clipToPlay = healClip;
@@ -137,6 +146,7 @@ public class Collectible : MonoBehaviour
     {
         switch (t)
         {
+            case CollectibleType.Food: return foodColor;
             case CollectibleType.Heal: return healColor;
             case CollectibleType.Speed: return speedColor;
             case CollectibleType.Points: return pointsColor;

@@ -100,6 +100,10 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        // Grab the script and apply the life-based penalty rule
+        var hungerScript = player.GetComponent<PlayerHunger>();
+        if (hungerScript) hungerScript.ApplyRespawnPenalty(GetLives());
+
         // clear death-disabled components & colliders
         var death = player.GetComponent<PlayerDeathHandler>();
         if (death) death.SetDeadState(false);
