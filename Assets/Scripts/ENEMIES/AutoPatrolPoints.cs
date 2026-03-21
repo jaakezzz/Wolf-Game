@@ -140,14 +140,14 @@ public class AutoPatrolPoints : MonoBehaviour
         if (created < pointCount)
             Debug.LogWarning($"[AutoPatrolPoints] Only generated {created}/{pointCount} points. Try lowering minSeparation or edgeBias or raising attempts.");
 
-        // Assign to AI
+        // Assign to AI and sort in clockwise order for realistic patrol paths
         validTransforms.Sort((a, b) =>
         {
-            Vector2 ca = new Vector2(a.position.x - center.x, a.position.z - center.z);
-            Vector2 cb = new Vector2(b.position.x - center.x, b.position.z - center.z);
-            float aa = Mathf.Atan2(ca.y, ca.x);
-            float ab = Mathf.Atan2(cb.y, cb.x);
-            return aa.CompareTo(ab);
+            Vector2 ca = new Vector2(a.position.x - center.x, a.position.z - center.z); // relative to center
+            Vector2 cb = new Vector2(b.position.x - center.x, b.position.z - center.z); // relative to center
+            float aa = Mathf.Atan2(ca.y, ca.x); // -pi to pi
+            float ab = Mathf.Atan2(cb.y, cb.x); // -pi to pi
+            return aa.CompareTo(ab); // sort by angle around center
         });
         ai.patrolPoints = validTransforms.ToArray();
         if (Application.isPlaying && container != null)
