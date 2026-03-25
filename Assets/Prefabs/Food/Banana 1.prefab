@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 7627058004907486326}
   - component: {fileID: -3344550566948976086}
   - component: {fileID: -8558684889965684476}
+  - component: {fileID: 7124797653729959175}
   m_Layer: 0
   m_Name: Banana 1
   m_TagString: Untagged
@@ -199,3 +200,16 @@ MonoBehaviour:
   sfxVolume: 1
   pauseDelay: 0.75
   pauseOnUnlock: 1
+--- !u!114 &7124797653729959175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6640961082957238970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eec597e70e7ec0f428db557accb4c163, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldEntity
+  id: 

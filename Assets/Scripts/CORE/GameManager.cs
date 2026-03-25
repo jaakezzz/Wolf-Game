@@ -52,6 +52,7 @@ public class GameManager : MonoBehaviour
         currentLives = Mathf.Max(0, startingLives);
         UpdateLivesUI();
         Time.timeScale = 1f; // ensure not paused from previous scene
+        Application.targetFrameRate = -1;
     }
 
     public void AddScore(int v) { score += v; }

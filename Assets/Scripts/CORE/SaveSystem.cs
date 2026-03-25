@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Serialization;
-using System.Security.Cryptography;
 using UnityEngine;
 
 [Serializable]
@@ -10,20 +11,22 @@ public class SaveData
 {
     public int version = 1;
 
-    // Scene
     public string sceneName;
-
-    // Player xform
     public float px, py, pz;
     public float rx, ry, rz, rw;
-
-    // Player health
     public float currentHP;
     public float maxHP;
-
-    // Meta
     public int score;
     public int lives;
+    public float currentHunger;
+    public bool runUnlocked;
+    public bool jumpUnlocked;
+
+    // The random seed that dictates exactly where the spawn system puts items
+    public int worldSeed;
+
+    // The master list of every specific enemy and item the player has destroyed
+    public List<string> destroyedEntities = new List<string>();
 }
 
 public static class SaveSystem

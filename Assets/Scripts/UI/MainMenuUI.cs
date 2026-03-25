@@ -9,6 +9,10 @@ public class MainMenuUI : MonoBehaviour
     [Tooltip("Name of your gameplay scene (the one you've been working in). Make sure it's in Build Settings!")]
     public string gameSceneName = "SampleScene";
 
+    [Header("UI Panels")]
+    public GameObject mainMenuPanel;
+    public GameObject settingsPanel;
+
     [Header("Cursor")]
     public bool showCursor = true;
 
@@ -77,6 +81,20 @@ public class MainMenuUI : MonoBehaviour
         }
 
         SceneManager.LoadScene(gameSceneName);
+    }
+
+    // Hook this to a "Settings" button
+    public void OpenSettings()
+    {
+        mainMenuPanel.SetActive(false);
+        settingsPanel.SetActive(true);
+    }
+
+    // Hook this to a "Back" button inside the settings menu
+    public void CloseSettings()
+    {
+        settingsPanel.SetActive(false);
+        mainMenuPanel.SetActive(true);
     }
 
     // Hook this to a Quit button

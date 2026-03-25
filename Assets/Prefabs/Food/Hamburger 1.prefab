@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8629336669717506974}
   - component: {fileID: 398152032988924432}
   - component: {fileID: -513380171193198671}
+  - component: {fileID: 754779170100533014}
   m_Layer: 0
   m_Name: Hamburger 1
   m_TagString: Untagged
@@ -65,6 +66,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -91,6 +94,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -123,10 +127,10 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6070221597718408247}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -170,10 +174,10 @@ MonoBehaviour:
   type: 0
   points: 50
   healAmount: 30
-  speedBoost: 2
-  speedDuration: 5
+  hungerAmount: 15
   pickupFX: {fileID: 7287639416097900145, guid: 65a517f55d40dfa4c9a23b2143ddeb6c, type: 3}
   tintFXByType: 1
+  foodColor: {r: 0, g: 0.5, b: 1, a: 1}
   healColor: {r: 1, g: 0.89202094, b: 0.2830189, a: 1}
   speedColor: {r: 0, g: 0.9056604, b: 0.17787941, a: 1}
   pointsColor: {r: 0.88533276, g: 0.3962264, b: 1, a: 1}
@@ -184,3 +188,18 @@ MonoBehaviour:
   pointsClip: {fileID: 0}
   winClip: {fileID: 0}
   sfxVolume: 1
+  pauseDelay: 0.75
+  pauseOnUnlock: 1
+--- !u!114 &754779170100533014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6070221597718408247}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eec597e70e7ec0f428db557accb4c163, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldEntity
+  id: 

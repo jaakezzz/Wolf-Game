@@ -17,6 +17,12 @@ public class SpawnSystem : MonoBehaviour
 
     void Start()
     {
+        // --- Force the Spawner to use our specific Saved Seed ---
+        if (WorldStateManager.I != null)
+        {
+            Random.InitState(WorldStateManager.I.worldSeed);
+        }
+
         SpawnScatterItems();
         SpawnMainObjective();
     }

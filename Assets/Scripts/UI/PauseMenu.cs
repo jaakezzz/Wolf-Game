@@ -23,6 +23,16 @@ public class PauseMenu : MonoBehaviour
         if (pauseMenu) pauseMenu.SetActive(false);
         if (hud) hud.SetActive(true);
         if (unlockedSpeedCanvas) unlockedSpeedCanvas.SetActive(false);
+
+        // As soon as the new scene wakes up, ask the World Memory if we are supposed to be loading a save
+        if (WorldStateManager.I != null && WorldStateManager.I.pendingLoad != null)
+        {
+            // Apply all the positions, health, and stats
+            ApplySaveData(WorldStateManager.I.pendingLoad);
+
+            // Clear the backpack so we don't accidentally load it again later!
+            WorldStateManager.I.pendingLoad = null;
+        }
     }
 
     void Update()
@@ -86,21 +96,19 @@ public class PauseMenu : MonoBehaviour
 
     public void OnSaveButton()
     {
-        // Gather
         var gm = GameManager.I;
-        if (!gm || !gm.player)
-        {
-            Debug.LogWarning("[Save] No GameManager or Player found.");
-            return;
-        }
+        if (!gm || !gm.player) return;
 
         var t = gm.player.transform;
         var hp = gm.player.GetComponent<Health>();
 
+        // Grab the missing player stats
+        var hungerScript = gm.player.GetComponent<PlayerHunger>();
+        var motorScript = gm.player.GetComponent<PlayerMotor>();
+
         var data = new SaveData
         {
             sceneName = SceneManager.GetActiveScene().name,
-
             px = t.position.x,
             py = t.position.y,
             pz = t.position.z,
@@ -111,9 +119,15 @@ public class PauseMenu : MonoBehaviour
 
             currentHP = hp ? hp.currentHP : 100f,
             maxHP = hp ? hp.maxHP : 100f,
-
             score = gm.score,
-            lives = TryGetLivesFromGM(gm) // optional helper below
+            lives = TryGetLivesFromGM(gm),
+
+            currentHunger = hungerScript ? hungerScript.currentHunger : 100f,
+            runUnlocked = motorScript ? motorScript.runUnlocked : true,
+            jumpUnlocked = motorScript ? motorScript.jumpUnlocked : true,
+
+            worldSeed = WorldStateManager.I.worldSeed,
+            destroyedEntities = new System.Collections.Generic.List<string>(WorldStateManager.I.destroyedEntities)
         };
 
         SaveSystem.Save(data);
@@ -127,29 +141,21 @@ public class PauseMenu : MonoBehaviour
             return;
         }
 
-        // Always unpause before loading/appplying
         SetPaused(false);
 
-        // Same scene? Apply immediately; otherwise load then apply.
-        if (SceneManager.GetActiveScene().name == data.sceneName)
+        // Hand the data to the World Brain so it survives the scene wipe
+        if (WorldStateManager.I != null)
         {
-            ApplySaveData(data);
-        }
-        else
-        {
-            StartCoroutine(LoadSceneThenApply(data));
-        }
-    }
+            WorldStateManager.I.worldSeed = data.worldSeed;
+            WorldStateManager.I.destroyedEntities = new System.Collections.Generic.List<string>(data.destroyedEntities);
 
-    System.Collections.IEnumerator LoadSceneThenApply(SaveData data)
-    {
+            // Put the save file in the backpack
+            WorldStateManager.I.pendingLoad = data;
+        }
+
+        // Just load the scene directly. No more fragile coroutines!
         Time.timeScale = 1f;
-        var op = SceneManager.LoadSceneAsync(data.sceneName);
-        while (!op.isDone) yield return null;
-
-        // Wait a frame for objects to initialize
-        yield return null;
-        ApplySaveData(data);
+        SceneManager.LoadScene(data.sceneName);
     }
 
     void ApplySaveData(SaveData data)
@@ -185,6 +191,17 @@ public class PauseMenu : MonoBehaviour
         // Score & lives
         gm.score = data.score;
         TrySetLivesOnGM(gm, data.lives);
+
+        // Player-specific stats (hunger, run/jump unlocks)
+        var hungerScript = gm.player.GetComponent<PlayerHunger>();
+        if (hungerScript) hungerScript.currentHunger = data.currentHunger;
+
+        var motorScript = gm.player.GetComponent<PlayerMotor>();
+        if (motorScript)
+        {
+            motorScript.runUnlocked = data.runUnlocked;
+            motorScript.jumpUnlocked = data.jumpUnlocked;
+        }
 
         // Re-show HUD (in case we loaded from pause)
         if (hud) hud.SetActive(true);
