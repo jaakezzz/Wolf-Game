@@ -9,7 +9,14 @@ public class MouseLook : MonoBehaviour
 
     float pitch;
 
-    void Start() { Cursor.lockState = CursorLockMode.Locked; }
+    void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+
+        // Apply the player's saved sensitivity multiplier
+        float sensMult = PlayerPrefs.GetFloat("MouseSensitivitySetting", 1f);
+        mouseSensitivity *= sensMult;
+    }
 
     void Update()
     {

@@ -138,7 +138,7 @@ public class AutoPatrolPoints : MonoBehaviour
         }
 
         if (created < pointCount)
-            Debug.LogWarning($"[AutoPatrolPoints] Only generated {created}/{pointCount} points. Try lowering minSeparation or edgeBias or raising attempts.");
+            Debug.LogWarning($"[AutoPatrolPoints] {gameObject.name} only generated {created}/{pointCount} points. Try lowering minSeparation or edgeBias or raising attempts.", gameObject);
 
         // Assign to AI and sort in clockwise order for realistic patrol paths
         validTransforms.Sort((a, b) =>

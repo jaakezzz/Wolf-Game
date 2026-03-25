@@ -13,6 +13,7 @@ public class SettingsManager : MonoBehaviour
     // UI References
     // ----------------------------------------
     [Header("UI Components")]
+    public Slider sensitivitySlider;
     public TMP_Dropdown qualityDropdown;
     public TMP_Dropdown resolutionDropdown;
     public Toggle fullscreenToggle;
@@ -25,16 +26,25 @@ public class SettingsManager : MonoBehaviour
     // Stores the list of resolutions specific to the player's physical monitor
     private Resolution[] resolutions;
 
+    // A simple bool to prevent code events from firing while we're still initializing the UI
+    private bool isInitializing = true;
+
     // -----------------------------------------------------------------------------
     // Initialization
     // -----------------------------------------------------------------------------
-    void Start()
+    System.Collections.IEnumerator Start()
     {
-        // Setup the Resolution Dropdown
-        SetupResolutionDropdown();
+        // 1. Keep the shield UP while we load
+        isInitializing = true;
 
-        // Now that the UI exists, pull the saved data from the hard drive
+        SetupResolutionDropdown();
         LoadSettings();
+
+        // 2. THE VAULT DOOR: Wait exactly one frame for all UI elements to finish waking up and misfiring
+        yield return null;
+
+        // 3. The UI is completely stable now. Drop the shield permanently.
+        isInitializing = false;
     }
 
     // -----------------------------------------------------------------------------
@@ -83,6 +93,7 @@ public class SettingsManager : MonoBehaviour
     void LoadSettings()
     {
         // 1. Read all saved values from the hard drive first
+        float savedSensitivity = PlayerPrefs.GetFloat("MouseSensitivitySetting", 1f);
         int savedQuality = PlayerPrefs.GetInt("QualitySetting", QualitySettings.GetQualityLevel());
         int savedFullscreen = PlayerPrefs.GetInt("FullscreenSetting", Screen.fullScreen ? 1 : 0);
         float savedLOD = PlayerPrefs.GetFloat("LODBiasSetting", QualitySettings.lodBias);
@@ -91,12 +102,15 @@ public class SettingsManager : MonoBehaviour
         int savedFPSTargetIndex = PlayerPrefs.GetInt("FPSTargetSetting", 1);
 
         // 2. Update the UI visuals WITHOUT triggering their code events!
+        if (sensitivitySlider) sensitivitySlider.SetValueWithoutNotify(savedSensitivity);
         qualityDropdown.SetValueWithoutNotify(savedQuality);
         fullscreenToggle.SetIsOnWithoutNotify(savedFullscreen == 1);
         lodBiasSlider.SetValueWithoutNotify(savedLOD);
         fpsToggle.SetIsOnWithoutNotify(savedFPSToggle == 1);
         VSyncToggle.SetIsOnWithoutNotify(savedVSync == 1);
         fpsTargetDropdown.SetValueWithoutNotify(savedFPSTargetIndex);
+
+        isInitializing = false;
 
         // 3. Now safely apply the actual logic to the engine
         SetQuality(savedQuality);
@@ -110,6 +124,8 @@ public class SettingsManager : MonoBehaviour
         {
             SetFPSTarget(savedFPSTargetIndex);
         }
+
+        isInitializing = true;
     }
 
     // -----------------------------------------------------------------------------
@@ -122,6 +138,8 @@ public class SettingsManager : MonoBehaviour
     /// </summary>
     public void SetQuality(int qualityIndex)
     {
+        if (isInitializing) return;
+
         // Unity automatically passes the Dropdown's index number (0 = Low, 1 = Medium, etc.)
         QualitySettings.SetQualityLevel(qualityIndex);
 
@@ -141,6 +159,8 @@ public class SettingsManager : MonoBehaviour
     /// </summary>
     public void SetResolution(int resolutionIndex)
     {
+        if (isInitializing) return;
+
         // Look up the exact width and height from the array we built in Start()
         Resolution resolution = resolutions[resolutionIndex];
 
@@ -156,6 +176,8 @@ public class SettingsManager : MonoBehaviour
     /// </summary>
     public void SetFullscreen(bool isFullscreen)
     {
+        if (isInitializing) return;
+
         // Flips the game between Windowed and Fullscreen mode
         Screen.fullScreen = isFullscreen;
 
@@ -169,6 +191,8 @@ public class SettingsManager : MonoBehaviour
     /// </summary>
     public void SetLODBias(float biasValue)
     {
+        if (isInitializing) return;
+
         // 1.0 is standard. 2.0 pushes transitions far away (laggy). 0.5 pulls them in close (fast).
         QualitySettings.lodBias = biasValue;
 
@@ -181,6 +205,8 @@ public class SettingsManager : MonoBehaviour
     /// </summary>
     public void SetFPSDisplay(bool isShowing)
     {
+        if (isInitializing) return;
+
         if (fpsCounterObject != null)
         {
             fpsCounterObject.SetActive(isShowing);
@@ -196,6 +222,8 @@ public class SettingsManager : MonoBehaviour
     /// </summary>
     public void SetFPSTarget(int targetIndex)
     {
+        if (isInitializing) return;
+
         switch (targetIndex)
         {
             case 0: Application.targetFrameRate = 30; break;
@@ -213,6 +241,8 @@ public class SettingsManager : MonoBehaviour
 
     public void SetVSync(bool isVSyncOn)
     {
+        if (isInitializing) return;
+
         if (isVSyncOn)
         {
             // Turn VSync on. Unity will now lock to the monitor's refresh rate.
@@ -236,6 +266,18 @@ public class SettingsManager : MonoBehaviour
         }
 
         PlayerPrefs.SetInt("VSyncSetting", isVSyncOn ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
+    /// <summary>
+    /// Triggered by the Sensitivity Slider.
+    /// Values should range from ~0.1 (very slow) to 2.0+ (very fast), with 1.0 as default.
+    /// </summary>
+    public void SetSensitivity(float multiplier)
+    {
+        if (isInitializing) return;
+
+        PlayerPrefs.SetFloat("MouseSensitivitySetting", multiplier);
         PlayerPrefs.Save();
     }
 }

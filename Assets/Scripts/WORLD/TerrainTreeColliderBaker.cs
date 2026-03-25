@@ -15,7 +15,12 @@ public class TerrainTreeColliderBaker : MonoBehaviour
     public float yOffset = 0f;
 
     [Header("Filter which prototypes get colliders")]
-    public int[] includePrototypeIndices; // e.g., only real trees (not grass/bush)
+    public int[] includePrototypeIndices;
+
+    // --- NEW: Automatically assign the physics layer! ---
+    [Header("Physics")]
+    [Tooltip("The exact name of the layer you created for trees (e.g., 'Trees')")]
+    public string treeLayerName = "Trees";
 
     Transform _container;
 
@@ -50,15 +55,18 @@ public class TerrainTreeColliderBaker : MonoBehaviour
         var size = td.size;
         var pos = terrain.transform.position;
 
-        // quick lookup for included indices
         System.Array.Sort(includePrototypeIndices);
+
+        // Look up the ID number of the layer you typed in
+        int layerId = LayerMask.NameToLayer(treeLayerName);
+        if (layerId == -1) layerId = 0; // Fallback to Default if you typed the name wrong
 
         int made = 0;
         foreach (var ti in td.treeInstances)
         {
             if (includePrototypeIndices != null && includePrototypeIndices.Length > 0)
             {
-                if (System.Array.BinarySearch(includePrototypeIndices, ti.prototypeIndex) < 0) continue; // skip non-tree (grass/bush)
+                if (System.Array.BinarySearch(includePrototypeIndices, ti.prototypeIndex) < 0) continue;
             }
 
             Vector3 wp = new Vector3(ti.position.x * size.x, ti.position.y * size.y, ti.position.z * size.z) + pos;
@@ -68,8 +76,11 @@ public class TerrainTreeColliderBaker : MonoBehaviour
             go.transform.position = wp + new Vector3(0, yOffset, 0);
             go.transform.rotation = Quaternion.Euler(0f, ti.rotation * Mathf.Rad2Deg, 0f);
 
+            // --- NEW: Apply the layer to the tree ---
+            go.layer = layerId;
+
             var cap = go.AddComponent<CapsuleCollider>();
-            cap.direction = 1; // Y
+            cap.direction = 1;
             cap.height = baseHeight * ti.heightScale;
             cap.radius = baseRadius * ti.widthScale;
             cap.center = new Vector3(0, cap.height * 0.5f, 0);

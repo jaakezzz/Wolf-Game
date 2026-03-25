@@ -37,6 +37,11 @@ public class SimpleChaseCamera : MonoBehaviour
         followPos = target.position;                  // start anchored at target
         curPos = cam.transform.position;
         curRot = cam.transform.rotation;
+
+        // Apply the player's saved sensitivity multiplier
+        float sensMult = PlayerPrefs.GetFloat("MouseSensitivitySetting", 1f);
+        yawSpeed *= sensMult;
+        pitchSpeed *= sensMult;
     }
 
     void Update()
