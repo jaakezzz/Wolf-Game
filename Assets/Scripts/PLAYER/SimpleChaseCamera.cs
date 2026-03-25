@@ -47,8 +47,8 @@ public class SimpleChaseCamera : MonoBehaviour
     void Update()
     {
         // Mouse orbit (unscaled so it still works if the game pauses)
-        yaw += Input.GetAxis("Mouse X") * yawSpeed * Time.unscaledDeltaTime;
-        pitch -= Input.GetAxis("Mouse Y") * pitchSpeed * Time.unscaledDeltaTime;
+        yaw += Input.GetAxis("Mouse X") * yawSpeed;
+        pitch -= Input.GetAxis("Mouse Y") * pitchSpeed;
         pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
         // Scroll zoom

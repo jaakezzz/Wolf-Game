@@ -66,15 +66,17 @@ public class SettingsManager : MonoBehaviour
         // Loop through the monitor's array of resolutions
         for (int i = 0; i < resolutions.Length; i++)
         {
-            // Format the text to look nice (e.g., "1920 x 1080")
-            string option = resolutions[i].width + " x " + resolutions[i].height;
+            float refreshRate = (float)resolutions[i].refreshRateRatio.value;
+
+            // Format: "1920 x 1080 @ 120Hz"
+            string option = resolutions[i].width + " x " + resolutions[i].height + " @ " + Mathf.RoundToInt(refreshRate) + "Hz";
             options.Add(option);
 
-            // Check if this specific resolution in the loop matches what the game is currently running at
+            // Check if width, height, AND refresh rate match what the screen is currently doing
             if (resolutions[i].width == Screen.currentResolution.width &&
-                resolutions[i].height == Screen.currentResolution.height)
+                resolutions[i].height == Screen.currentResolution.height &&
+                Mathf.RoundToInt((float)resolutions[i].refreshRateRatio.value) == Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value))
             {
-                // If it matches, save this index number so we can highlight it in the dropdown
                 currentResolutionIndex = i;
             }
         }
@@ -164,8 +166,8 @@ public class SettingsManager : MonoBehaviour
         // Look up the exact width and height from the array we built in Start()
         Resolution resolution = resolutions[resolutionIndex];
 
-        // Apply it. The third parameter checks our toggle to decide if it should be windowed or fullscreen.
-        Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen);
+        // Apply width, height, fullscreen toggle, AND the chosen refresh rate
+        Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreenMode, resolution.refreshRateRatio);
 
         PlayerPrefs.SetInt("ResolutionSetting", resolutionIndex);
         PlayerPrefs.Save();
